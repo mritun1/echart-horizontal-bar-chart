@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN" style="height: 100%">
+<head>
+  <meta charset="utf-8">
+  <title>Horizontal Column Graph with API Data and For Loop</title>
+</head>
+<body style="height: 100%; margin: 0">
+
+  <!-- Add a container for the chart -->
+  <div class="chart-fb" id="chart_div" style="width: 900px; height: 1000px;"></div>
+
+
+  <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+  <script type="text/javascript">
+    Chart();
+    function Chart() {
+      var newpost = new Array();
+      var newimpressions = new Array();
+      var newreach = new Array();
+      var newlikes = new Array();
+      var newcomments = new Array();
+      var newimg = new Array();
+      var date = new Array();
+      let t = 'Film Facebook Post Analysis';
+      fetch('http://45.76.160.28:4009/app/api/v1/fb.php?for=post_list&limit=')
+        .then(response => response.json())
+        .then(apiData => {
+          var dom = document.getElementById('chart_div');
+          var myChart = echarts.init(dom, null, {
+            renderer: 'canvas',
+            useDirtyRect: false
+          });
+          var app = {};
+          var ROOT_PATH = 'https://echarts.apache.org/examples';
+          var option;
+
+          const weatherIcons = {
+            Sunny: ROOT_PATH + '/data/asset/img/weather/sunny_128.png',
+            Cloudy: ROOT_PATH + '/data/asset/img/weather/cloudy_128.png',
+            Showers: ROOT_PATH + '/data/asset/img/weather/showers_128.png'
+          };
+          const seriesLabel = {
+            show: true
+          };
+          apiData.forEach(postData => {
+            // var post = postData.message.substr(0, 40).replaceAll(" ","_");
+            var post = 'Post'+postData.count_id;
+            var postedDate = new Date(postData.created_on);
+            var impressions = parseInt(postData.impressions_count);
+            var reach = parseInt(postData.reach_count);
+            var likes = parseInt(postData.likes_count);
+            var comments = parseInt(postData.comments_count);
+            var img = postData.image;
+            newpost.push(post);
+            newimpressions.push(impressions);
+            newreach.push(reach);
+            newlikes.push(likes);
+            newcomments.push(comments);
+            newimg.push(img);
+            date[post] = formatDate(postedDate);
+          });
+          // console.log(newpost)
+          option = {
+            backgroundColor: '#fff',
+            title: {
+              text: t
+            },
+            tooltip: {
+              trigger: 'axis',
+              axisPointer: {
+                type: 'shadow'
+              }
+            },
+            legend: {
+              data: ['Impressions', 'Reach', 'Likes','Comments']
+            },
+            grid: {
+              left: 100
+            },
+            xAxis: {
+              type: 'value',
+              name: 'Number',
+              axisLabel: {
+                formatter: '{value}'
+              }
+            },
+            yAxis: {
+              type: 'category',
+              inverse: true,
+              data: newpost,
+              axisLabel: {
+                formatter: function (value) {
+                  return '{' + value + '| }\n\n{value|' + date[value] + '}';
+                },
+                margin: 20,
+                rich: {
+                  value: {
+                    lineHeight: 30,
+                    align: 'center'
+                  },
+                  
+                }
+              }
+            },
+            series: [
+              {
+                name: 'Impressions',
+                type: 'bar',
+                itemStyle: {color: '#800000'},
+                label: seriesLabel,
+                data: newimpressions,
+
+
+
+                label: {
+            position: 'right',
+
+          show: true
+        },
+              },
+
+
+
+
+              {
+                name: 'Reach',
+                type: 'bar',
+                itemStyle: {color: '#ad9440'},
+                label: seriesLabel,
+                data: newreach,
+                label: {
+            position: 'right',
+
+          show: true
+        },
+
+              },
+              {
+                name: 'Likes',
+                type: 'bar',
+                itemStyle: {color: '#000000'},
+                label: seriesLabel,
+                data: newlikes,
+                label: {
+            position: 'right',
+
+          show: true
+        },
+              },
+              {
+                name: 'Comments',
+                type: 'bar',
+                itemStyle: {color: '#0000ff'},
+                label: seriesLabel,
+                data: newcomments,
+                label: {
+            position: 'right',
+
+          show: true
+        },
+              }
+            ]
+          };
+          var obj = {};
+          apiData.filter(postData => {
+            obj['Post'+postData.count_id] = {
+              height: 70,
+              align: 'center',
+              backgroundColor: {
+                image: postData.image
+              }
+            }
+          });
+          option.yAxis.axisLabel.rich = obj;
+          if (option && typeof option === 'object') {
+            myChart.setOption(option);
+          }
+
+          window.addEventListener('resize', myChart.resize);
+        })
+        .catch(error => {
+          console.error('Error fetching API data:', error);
+        });
+
+    }
+    function formatDate(date) {
+      var year = date.getFullYear();
+      var month = (date.getMonth() + 1).toString().padStart(2, '0');
+      var day = date.getDate().toString().padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+    function changeData(){
+      let select_type = document.getElementById("select_type").value;
+      let list_num = document.getElementById("list_num").value;
+      let the_date = document.getElementById("the_date").value;
+      //alert(the_date);
+      if(the_date != ''){
+
+        var dateParts = the_date.split('-');
+        var date = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+        var options = { weekday: 'long', month: 'long', day: 'numeric' };
+        var formattedDate = date.toLocaleDateString('en-US', options);
+
+        document.getElementById("dt").innerHTML = 'Date: ' + formattedDate;
+      }
+      Chart(list_num,select_type, the_date);
+    }
+  </script>
+</body>
+</html>
